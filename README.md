@@ -1,111 +1,70 @@
-# Status Monitor — Serverless + Event-Driven (Webhooks + RSS)
+# Status Monitor — Serverless & Event-Driven (Webhooks + RSS)
 
-This project automatically tracks service incidents from multiple providers (including the OpenAI Status Page) using a hybrid event-driven design:
+This project monitors service incidents (including the OpenAI Status Page) using a hybrid event-driven architecture:
 
-Webhooks for providers that support push-based updates
+Webhooks → real-time push updates
 
-RSS Feeds for providers that only offer event feeds
+RSS feeds → efficient event-like checks (every 5 minutes)
 
-AWS Serverless (Lambda + EventBridge) to run everything reliably, cost-efficiently, and without manual refreshing
+AWS Serverless → Lambda + EventBridge for zero maintenance and near-zero cost
 
-Deployed webhook url (AWS Lambda) mentioned below
+Your deployed webhook URL (Lambda via API Gateway) is included below for testing.
 
-## Architecture Overview
-1. Webhook Path 
+Architecture Overview
+1. Webhook Path (Push Model)
 
-API Gateway receives webhook events
+Providers send POST requests to API Gateway
 
-Triggers a Lambda function
+API Gateway triggers the Webhook Lambda
 
-Logs incident updates
+Lambda logs the incident message
 
-2. RSS Path 
+2. RSS Path (Scheduled Event Model)
 
-EventBridge triggers Lambda every 5 minutes
+EventBridge runs the RSS Lambda every 5 minutes
 
-Lambda fetches RSS feeds (lightweight XML feeds designed for efficient checks)
+Lambda fetches lightweight RSS feeds
 
-Logs only new incident entries
+Only new incident entries are logged
 
 3. Shared Processor
 
-Both paths use the same processor function to standardize output:
+Both Lambda functions use the same processor, producing consistent output:
 
 [2025-11-03 14:32:00] Product: X
 Status: Y
 
+Why This Solution Fits the Requirements
 
-This keeps everything consistent across all providers.
+The assignment required avoiding manual refreshing and inefficient polling, and supporting 100+ providers.
 
-## Why This Meets the Assignment Requirements
+This design satisfies that by:
 
-The assignment asks for:
+Webhooks → true real-time, no polling
 
-“No manual refreshing or inefficient polling; must scale to 100+ providers.”
+RSS → efficient, low-frequency checks built for event updates
 
-This solution satisfies that because:
+Serverless → auto-scaling, low cost, no servers
 
-Webhooks → true event-driven, zero polling
+Extensible → add any number of RSS URLs or webhook endpoints
 
-RSS → efficient, low-frequency 5-minute checks
+Cost Analysis (All Within AWS Free Tier)
+Component	Usage	Free Tier	Cost
+RSS Lambda	8,640 runs/month	1,000,000 free	$0.00
+Webhook Lambda	~20–100 events	1,000,000 free	$0.00
+API Gateway (HTTP API)	Very low	1,000,000 free	$0.00
+EventBridge Rule	8,640 triggers	100,000 free	$0.00
+CloudWatch Logs	Few MB	5 GB free	$0.00
+💰 Total Monthly Cost: $0.00
 
-Serverless → auto-scaling, no servers, extremely low cost
+Even with 20–30 RSS feeds → still free
+Even with 100+ feeds → under $1/month
 
-Works for any number of providers by adding more RSS URLs or webhook endpoints
+Webhook Test Endpoint
 
-## Cost Analysis (AWS Free Tier)
+Your webhook Lambda is live for testing for 1 week:
 
-1. Lambda (RSS Checker)
-
-Runs every 5 minutes:
-
-288 invocations/day
-
-8,640 invocations/month
-
-Free tier gives 1,000,000 invocations/month
-
-→ Cost: $0.00
-
-2. Lambda (Webhook Receiver)
-
-Only runs when a provider sends a webhook.
-
-Assume 20–100 webhook events per month:
-
-→ Cost: $0.00
-
-3. API Gateway (for Webhooks)
-
-HTTP API free tier: 1,000,000 requests/month
-
-→ Cost: $0.00
-
-4. EventBridge Scheduled Rule
-
-One rule runs every 5 minutes:
-8,640 events/month
-Free tier: 100,000 events/month
-
-→ Cost: $0.00
-
-5. CloudWatch Logs
-
-Free tier: 5 GB/month
-Your logs use a few MB at most.
-
-→ Cost: $0.00
-
-💰 Total Monthly Cost
-$0.00 (fully within AWS free tier)
-
-Even if you monitored 20–30 RSS feeds, it remains free.
-Even with 100+ feeds, monthly cost stays under $1.
-
-Test: (for webhook path)
-Ive deployed both the webhook and rss function on my free tier acc , will be keeping it active for a week inorder for you guys to test it.
 curl -X POST "https://ly6jh680tk.execute-api.ap-southeast-2.amazonaws.com/default/openAI_api_watcher" ^
   -H "Content-Type: application/json" ^
   -d "{\"incident\":{\"name\":\"Curl Test\",\"incident_updates\":[{\"body\":\"Webhook via curl!\"}]}}"
 
-![Alt text](image.png)
