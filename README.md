@@ -6,7 +6,8 @@ This project monitors service incidents (including the OpenAI Status Page) using
 - **RSS feeds** → efficient event-like checks (every 5 minutes)
 - **AWS Serverless** → Lambda + EventBridge for zero maintenance and near-zero cost
 
-Your deployed webhook URL (Lambda via API Gateway) is included below for testing.
+
+Deployed webhook URL (Lambda via API Gateway) is included below for testing.
 
 ## Architecture Overview
 
@@ -60,3 +61,5 @@ curl -X POST "https://ly6jh680tk.execute-api.ap-southeast-2.amazonaws.com/defaul
   -H "Content-Type: application/json" ^
   -d "{\"incident\":{\"name\":\"Curl Test\",\"incident_updates\":[{\"body\":\"Webhook via curl!\"}]}}"
 ```
+
+![CloudWatch Console](image.png)
